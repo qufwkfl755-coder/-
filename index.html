@@ -628,6 +628,40 @@
         renderQuizContent();
     }
 
+    /* =========================================================
+       🧠 지능형 유연 정답 비교 엔진 (Smart Compare Engine)
+       - 띄어쓰기, 온갖 괄호, 기호의 유무와 상관없이 내용적 본질이 맞으면 맞다고 인정함
+    ========================================================= */
+    function smartCompare(userAns, correctAns) {
+        if (!userAns || !correctAns) return false;
+
+        const uRaw = String(userAns).trim().toLowerCase();
+        const cRaw = String(correctAns).trim().toLowerCase();
+
+        // 1. 단순 완전 동일 여부 확인
+        if (uRaw === cRaw) return true;
+
+        // 2. 공백 제거, 특수 괄호 전량 파기, 화살표 기호 일원화
+        const normalize = (str) => {
+            return str
+                .replace(/\s+/g, '') // 모든 공백 제거
+                .replace(/[\(\)\[\]\{\}（）「」『』<>＜＞]/g, '') // 온갖 대소괄호 및 부등호 제거
+                .replace(/(->|=>|→|⇒)/g, '>') // 다채로운 화살표 표기를 표준 화살표로 통일
+                .replace(/[,，\/]/g, '>'); // 쉼표나 슬래시 분할도 화살표처럼 취급
+        };
+
+        if (normalize(uRaw) === normalize(cRaw)) return true;
+
+        // 3. 기호 완전 파기 후 순수 한글, 영문, 숫자 문자열 흐름 매칭 (예: "가>나>다" vs "가나다" 자동 정답 인정)
+        const extractPureText = (str) => {
+            return str.replace(/[^a-zA-Z0-9가-힣ㄱ-ㅎㅏ-ㅣ]/g, '');
+        };
+
+        if (extractPureText(uRaw) === extractPureText(cRaw)) return true;
+
+        return false;
+    }
+
     function renderQuizContent() {
         const stage = stages[currentStageIdx];
         const p = stage.questions[currentQuestionIdx];
@@ -712,12 +746,13 @@
         }
     }
 
+    // 이미지형 주관식 정답 대조 체킹 엔진 (지능형 유연 정답 비교 엔진 이식)
     function checkImageTextAnswer(userAns) {
         const stage = stages[currentStageIdx];
         const p = stage.questions[currentQuestionIdx];
         userAttempts[p.id]++;
 
-        if (String(userAns).toLowerCase() === String(p.correctText).toLowerCase().trim()) {
+        if (smartCompare(userAns, p.correctText)) {
             flash('green');
             setTimeout(() => {
                 if (currentQuestionIdx + 1 < stage.questions.length) {
@@ -787,10 +822,11 @@
         document.getElementById('gate-hint-display').innerText = gateData.hint;
     }
 
+    // 최종 게이트 주관식 검사 엔진 (지능형 유연 정답 비교 엔진 이식)
     function checkSecurity() {
         gateAttempts++;
         const input = document.getElementById('gate-pass').value.trim();
-        if (input === gateData.correct) {
+        if (smartCompare(input, gateData.correct)) {
             userAttempts["GATE"] = gateAttempts;
             clearInterval(timerInterval);
             document.getElementById('final-time').innerText = document.getElementById('timer-display').innerText.replace('진행 시간: ', '');
@@ -988,9 +1024,8 @@
         }
     }
 
-    // 개별 문항 즉석 저장 장치 함수 추가
+    // 개별 문항 즉석 저장 장치 함수
     function saveSingleQuestion(stageIdx, qIdx) {
-        // 문항 내용 유출 없이 내부 배열에 실시간 추출 저장
         saveQuestionInputs(stageIdx, qIdx);
         showToast(`${stages[stageIdx].name} - 문항 ${qIdx + 1} 설정이 정상 저장되었습니다!`);
     }
@@ -1072,7 +1107,7 @@
                 const qDiv = document.createElement('div');
                 qDiv.className = "bg-gray-950 p-5 border border-red-950/60 rounded space-y-4 relative";
                 
-                // HTML 동적 폼 빌딩 (개별 문항 '이 문항 저장' 버튼 적용 완료)
+                // HTML 동적 폼 빌딩 (개별 문항 '이 문항 저장' 버튼 적용)
                 qDiv.innerHTML = `
                     <div class="flex flex-col md:flex-row md:justify-between md:items-center border-b border-gray-800 pb-2 gap-2">
                         <span class="font-bold text-gray-400 text-md">문항 ${qIdx + 1} (고유 식별자: ${p.id})</span>
@@ -1104,7 +1139,7 @@
                         </div>
                     </div>
 
-                    <!-- [업그레이드!] 일반 객관식 영역 (보기 증감 완벽 작동 구조) -->
+                    <!-- 일반 객관식 영역 (보기 증감 구조) -->
                     <div id="admin-options-zone-${stageIdx}-${qIdx}" class="${p.type === 'choice' ? '' : 'hidden'} space-y-2">
                         <label class="text-sm text-gray-400 block">선택지 및 정답 지정(왼쪽 원형 체크, 최소 2개 / 최대 8개)</label>
                         <div class="grid grid-cols-1 gap-2" id="admin-opts-list-${stageIdx}-${qIdx}"></div>
@@ -1124,7 +1159,7 @@
                         </div>
                     </div>
 
-                    <!-- 이미지 객관식용 번호 선택지 영역 (①, ②, ③, ④, ⑤ 형태로 빠른 매핑 지원) -->
+                    <!-- 이미지 객관식용 번호 선택지 영역 -->
                     <div id="admin-img-choice-zone-${stageIdx}-${qIdx}" class="${p.type === 'image-choice' ? '' : 'hidden'} space-y-2 bg-red-950/10 p-3 rounded border border-red-950/20">
                         <label class="text-sm text-gray-400 block font-bold">🔢 정답 번호 선택</label>
                         <div class="flex flex-wrap gap-6">
