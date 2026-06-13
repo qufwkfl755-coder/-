@@ -458,9 +458,14 @@
             </div>
         </div>
 
-        <div class="flex justify-end gap-4 mt-8">
-            <button onclick="closeAdminModal()" class="blood-btn bg-gray-800 border-gray-600 !mt-0 !py-3 !px-6">취소</button>
-            <button onclick="saveAdminSettings()" class="blood-btn bg-red-800 !mt-0 !py-3 !px-6">설정 저장</button>
+        <div class="flex flex-wrap justify-between gap-4 mt-8">
+            <button onclick="exportNewHTMLFile()" class="blood-btn bg-emerald-800 border-emerald-600 hover:bg-emerald-700 !mt-0 !py-3 !px-6 text-sm md:text-base flex items-center gap-2">
+                <span>💾</span> 현재 퀴즈 파일로 추출하기
+            </button>
+            <div class="flex gap-4">
+                <button onclick="closeAdminModal()" class="blood-btn bg-gray-800 border-gray-600 !mt-0 !py-3 !px-6 text-sm md:text-base">취소</button>
+                <button onclick="saveAdminSettings()" class="blood-btn bg-red-800 !mt-0 !py-3 !px-6 text-sm md:text-base">전체 설정 저장</button>
+            </div>
         </div>
     </div>
 </div>
@@ -630,7 +635,6 @@
 
     /* =========================================================
        🧠 지능형 유연 정답 비교 엔진 (Smart Compare Engine)
-       - 띄어쓰기, 온갖 괄호, 기호의 유무와 상관없이 내용적 본질이 맞으면 맞다고 인정함
     ========================================================= */
     function smartCompare(userAns, correctAns) {
         if (!userAns || !correctAns) return false;
@@ -638,21 +642,18 @@
         const uRaw = String(userAns).trim().toLowerCase();
         const cRaw = String(correctAns).trim().toLowerCase();
 
-        // 1. 단순 완전 동일 여부 확인
         if (uRaw === cRaw) return true;
 
-        // 2. 공백 제거, 특수 괄호 전량 파기, 화살표 기호 일원화
         const normalize = (str) => {
             return str
-                .replace(/\s+/g, '') // 모든 공백 제거
-                .replace(/[\(\)\[\]\{\}（）「」『』<>＜＞]/g, '') // 온갖 대소괄호 및 부등호 제거
-                .replace(/(->|=>|→|⇒)/g, '>') // 다채로운 화살표 표기를 표준 화살표로 통일
-                .replace(/[,，\/]/g, '>'); // 쉼표나 슬래시 분할도 화살표처럼 취급
+                .replace(/\s+/g, '') 
+                .replace(/[\(\)\[\]\{\}（）「」『』<>＜＞]/g, '') 
+                .replace(/(->|=>|→|⇒)/g, '>') 
+                .replace(/[,，\/]/g, '>'); 
         };
 
         if (normalize(uRaw) === normalize(cRaw)) return true;
 
-        // 3. 기호 완전 파기 후 순수 한글, 영문, 숫자 문자열 흐름 매칭 (예: "가>나>다" vs "가나다" 자동 정답 인정)
         const extractPureText = (str) => {
             return str.replace(/[^a-zA-Z0-9가-힣ㄱ-ㅎㅏ-ㅣ]/g, '');
         };
@@ -669,7 +670,6 @@
         const imgContainer = document.getElementById('q-image-container');
         const imgEl = document.getElementById('q-image');
         
-        // 이미지 문항 처리 규칙
         if ((p.type === 'image-choice' || p.type === 'image-text') && p.image) {
             imgEl.src = p.image;
             imgContainer.classList.remove('hidden');
@@ -686,7 +686,6 @@
         optCont.innerHTML = '';
 
         if (p.type === 'image-text') {
-            // 이미지 주관식 UI
             const wrapper = document.createElement('div');
             wrapper.className = "flex flex-col items-center w-full max-w-lg mx-auto gap-4 mt-4";
             
@@ -718,7 +717,6 @@
             setTimeout(() => input.focus(), 100);
 
         } else if (p.type === 'image-choice') {
-            // 이미지 객관식 UI (5지선다 완벽 반영)
             const flexContainer = document.createElement('div');
             flexContainer.className = "flex justify-center flex-wrap gap-6 mt-4 w-full";
             
@@ -733,7 +731,6 @@
             });
             optCont.appendChild(flexContainer);
         } else {
-            // 일반 텍스트 문제 (객관식 & OX형) UI - 동적으로 증감된 선택지 전량 정상 렌더링
             p.options.forEach((opt, i) => {
                 if(opt && opt.trim() !== "") { 
                     const btn = document.createElement('button');
@@ -746,7 +743,6 @@
         }
     }
 
-    // 이미지형 주관식 정답 대조 체킹 엔진 (지능형 유연 정답 비교 엔진 이식)
     function checkImageTextAnswer(userAns) {
         const stage = stages[currentStageIdx];
         const p = stage.questions[currentQuestionIdx];
@@ -822,7 +818,6 @@
         document.getElementById('gate-hint-display').innerText = gateData.hint;
     }
 
-    // 최종 게이트 주관식 검사 엔진 (지능형 유연 정답 비교 엔진 이식)
     function checkSecurity() {
         gateAttempts++;
         const input = document.getElementById('gate-pass').value.trim();
@@ -988,7 +983,7 @@
         showToast("질문지가 안전하게 삭제되었습니다.");
     }
 
-    // [중요] 사용자가 입력한 현재 데이터를 유실 없이 내부 배열에 임시 세이브하는 유틸리티
+    // 사용자가 입력한 현재 데이터를 유실 없이 내부 배열에 임시 세이브하는 유틸리티
     function saveQuestionInputs(stageIdx, qIdx) {
         const p = stages[stageIdx].questions[qIdx];
         p.q = document.getElementById(`admin-q-${stageIdx}-${qIdx}`).value;
@@ -998,7 +993,6 @@
         p.type = type;
 
         if (type === 'choice') {
-            // 현재 활성화되어 렌더링된 선택지들 전량 수집
             const optInputs = document.querySelectorAll(`[id^="admin-opt-${stageIdx}-${qIdx}-"]`);
             const tempOpts = [];
             optInputs.forEach((input) => {
@@ -1032,7 +1026,7 @@
 
     // 선택지(보기) 동적 한 칸 추가 엔진
     function addOption(stageIdx, qIdx) {
-        saveQuestionInputs(stageIdx, qIdx); // 현재 입력값 선세이브
+        saveQuestionInputs(stageIdx, qIdx); 
         const p = stages[stageIdx].questions[qIdx];
         
         if (p.options.length >= 8) {
@@ -1047,7 +1041,7 @@
 
     // 특정 번호의 선택지(보기) 한 칸 제어 파기 엔진
     function deleteOptionItem(stageIdx, qIdx, optIdx) {
-        saveQuestionInputs(stageIdx, qIdx); // 현재 입력값 선세이브
+        saveQuestionInputs(stageIdx, qIdx); 
         const p = stages[stageIdx].questions[qIdx];
         
         if (p.options.length <= 2) {
@@ -1057,7 +1051,6 @@
         
         p.options.splice(optIdx, 1);
         
-        // 지운 보기가 현재 설정된 정답 인덱스보다 크거나 같다면 정답 체크박스 범위 재조정
         if (p.correct >= p.options.length) {
             p.correct = p.options.length - 1;
         }
@@ -1107,7 +1100,6 @@
                 const qDiv = document.createElement('div');
                 qDiv.className = "bg-gray-950 p-5 border border-red-950/60 rounded space-y-4 relative";
                 
-                // HTML 동적 폼 빌딩 (개별 문항 '이 문항 저장' 버튼 적용)
                 qDiv.innerHTML = `
                     <div class="flex flex-col md:flex-row md:justify-between md:items-center border-b border-gray-800 pb-2 gap-2">
                         <span class="font-bold text-gray-400 text-md">문항 ${qIdx + 1} (고유 식별자: ${p.id})</span>
@@ -1185,7 +1177,6 @@
                 `;
                 qWrapper.appendChild(qDiv);
 
-                // 일반 객관식 초기 선택지 렌더러 비동기 호출
                 if (p.type === 'choice') {
                     setTimeout(() => {
                         renderAdminOptionsList(stageIdx, qIdx);
@@ -1203,7 +1194,6 @@
         document.getElementById('admin-modal').style.display = 'flex';
     }
 
-    // 드롭다운 변경 시 인풋 컴포넌트 실시간 교체
     function toggleTypeFields(stageIdx, qIdx) {
         const type = document.getElementById(`admin-type-${stageIdx}-${qIdx}`).value;
         
@@ -1242,18 +1232,64 @@
     function saveAdminSettings() {
         stages.forEach((stage, stageIdx) => {
             stage.questions.forEach((p, qIdx) => {
-                // 각 문항의 최종 데이터 상태를 순차 세이브 동기화
                 saveQuestionInputs(stageIdx, qIdx);
             });
         });
 
-        // 최종 게이트 주관식 동기화
         gateData.q = document.getElementById('admin-gate-q').value;
         gateData.correct = document.getElementById('admin-gate-correct').value.trim();
         gateData.hint = document.getElementById('admin-gate-hint').value;
 
         showToast('모든 스테이지와 이미지 문항이 실시간 업데이트 완료되었습니다!');
         closeAdminModal();
+    }
+
+    /* =========================================================
+       💾 [신규 기능] 현재 퀴즈 상태를 내포한 신규 HTML 파일로 추출 (배포용)
+    ========================================================= */
+    function exportNewHTMLFile() {
+        // 1. 현재 관리자 모달창에 임시 기입된 정보들 배열 데이터에 전량 실시간 저장
+        stages.forEach((stage, stageIdx) => {
+            stage.questions.forEach((p, qIdx) => {
+                saveQuestionInputs(stageIdx, qIdx);
+            });
+        });
+        gateData.q = document.getElementById('admin-gate-q').value;
+        gateData.correct = document.getElementById('admin-gate-correct').value.trim();
+        gateData.hint = document.getElementById('admin-gate-hint').value;
+
+        // 2. 현재 실행 중인 HTML의 전체 문서 구조(DOM) 확보
+        let originalHTML = document.documentElement.outerHTML;
+
+        // 3. 자바스크립트의 stages 배열과 gateData 객체의 기본 정의부를 새 데이터로 치환(인베딩)
+        // 정규식이나 단순 텍스트 변경 대신, 메모리 상의 정제된 데이터를 스트링화하여 주입하는 가장 안전한 방식을 채택합니다.
+        const cleanStagesStr = JSON.stringify(stages, null, 4);
+        const cleanGateDataStr = JSON.stringify(gateData, null, 4);
+
+        // 기존 script 태그 내의 stages 정의부를 새 데이터 정의부로 강제 대체합니다.
+        // 이 안전 코드는 HTML 원본 텍스트의 데이터 셋 부분을 선생님이 새로 지정한 데이터 셋 스트링으로 치환해 줍니다.
+        const searchRegexStages = /let\s+stages\s*=\s*\[[\s\S]*?\];/;
+        const searchRegexGate = /let\s+gateData\s*=\s*\{[\s\S]*?\};/;
+
+        let newHTML = originalHTML
+            .replace(searchRegexStages, `let stages = ${cleanStagesStr};`)
+            .replace(searchRegexGate, `let gateData = ${cleanGateDataStr};`);
+
+        // 4. 모달 인풋들에 남아있을 수 있는 임시 입력값이나 활성화 스타일 상태 원복
+        newHTML = newHTML.replace(/id="admin-password-input" value=".*?"/g, 'id="admin-password-input" value=""');
+        newHTML = newHTML.replace(/class="modal" style="display:\s*flex;?"/g, 'class="modal" style="display: none;"');
+
+        // 5. Blob 객체로 포장하여 가상 클릭 트리거를 통해 로컬 다운로드 구동
+        const blob = new Blob(["<!DOCTYPE html>\n" + newHTML], { type: "text/html;charset=utf-8" });
+        const downloadLink = document.createElement("a");
+        downloadLink.href = URL.createObjectURL(blob);
+        downloadLink.download = "삼남중학교_탈출_물질의특성_퀴즈_적용판.html";
+        
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+
+        showToast("🎉 새로운 질문 데이터가 내포된 독립 배포용 HTML 파일이 다운로드되었습니다!");
     }
 </script>
 </body>
